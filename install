@@ -18,7 +18,7 @@ elif [ $RELEASE == "bionic" ]
         ROSDISTRO=melodic
 elif [ $RELEASE == "focal" ]
     then
-        ROSDISTRO=noetic
+        ROSDISTRO=foxy
 else
     echo "There's no ROS Distro compatible for your platform"
     exit 1
@@ -27,10 +27,20 @@ fi
 echo Installing ros-$ROSDISTRO
 
 sudo apt update
-sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
-sudo apt -y update
-sudo apt -y install dpkg
+
+
+if [ $ROSDISTRO == "foxy" ]
+    then
+        sudo apt update && sudo apt install curl gnupg2 lsb-release
+        curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -
+        sudo sh -c 'echo "deb [arch=$(dpkg --print-architecture)] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros2-latest.list'  
+        sudo apt -y update
+    else
+        sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+        wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
+        sudo apt -y update
+        sudo apt -y install dpkg
+    fi
 
 if [ $ARCH == "x86_64" ]
     then
@@ -38,17 +48,18 @@ if [ $ARCH == "x86_64" ]
         echo "Installing ROS-$ROSDISTRO Full Desktop Version"
 
 else  
-    sudo apt -y install ros-$ROSDISTRO-ros-base
-    echo "Installing ROS-$ROSDISTRO Barebones"
+    sudo apt -y install ros-$ROSDISTRO-desktop
+    echo "Installing ROS-$ROSDISTRO Desktop"
 fi
 
 source /opt/ros/$ROSDISTRO/setup.bash
 echo "source /opt/ros/$ROSDISTRO/setup.bash" >> ~/.bashrc
 source ~/.bashrc 
 
-if [ $ROSDISTRO == "noetic" ]
+if [ $ROSDISTRO == "foxy" ]
     then
-        sudo apt install -y python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool build-essential
+        sudo apt install -y python3-pip
+        pip3 install -U argcomplete
 else
     sudo apt install -y python-rosdep python-rosinstall python-rosinstall-generator python-wstool build-essential
     sudo `which rosdep` init
